@@ -40,6 +40,8 @@ from pyhml.models.ref_sequence import RefSequence
 from pyhml.models.reporting_center import ReportingCenter
 from pyhml.models.allele_assignment import AlleleAssignment
 from pyhml.models.consensus_seq_block import ConsensusSeqBlock
+from pyhml.models.variant import Variant
+from pyhml.models.variant import VariantEffect
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p',
@@ -175,18 +177,25 @@ class HmlParser(object):
                                                      in cbd['hmlns:sequence']
                                                      if re.search("\D", c)])
                             seq = Seq(consensus_seq, IUPAC.unambiguous_dna)
+                            variants = []
+                            for var in cbd['hmlns:variant']:
+                                variant = Variant(alternate_bases=var['@alternate-bases'],
+                                    end=var['@end'],
+                                    reference_bases=var['@reference-bases'],
+                                    start=var['@start'],
+                                    variant_effect=None)
+                                # TODO: Read variant_effect as well.
+                                variants.append(variant)
                             con_b = ConsensusSeqBlock(continuity=cbd['@continuity'],
-                                                      description=cbd['@description'],
-                                                      end=cbd['@end'],
-                                                      expected_copy_number=cbd['@expected-copy-number'],
-                                                      phase_set=cbd['@phase-set'],
-                                                      reference_sequence_id=cbd['@reference-sequence-id'],
-                                                      start=cbd['@start'],
-                                                      strand=str(cbd['@strand']),
-                                                      sequence=seq)
-                            for variant in cbd['hmlns:variant']:
-                                print('variant found:' + str(variant))
-
+                                description=cbd['@description'],
+                                end=cbd['@end'],
+                                expected_copy_number=cbd['@expected-copy-number'],
+                                phase_set=cbd['@phase-set'],
+                                reference_sequence_id=cbd['@reference-sequence-id'],
+                                start=cbd['@start'],
+                                strand=str(cbd['@strand']),
+                                sequence=seq,
+                                variant=variants)
                             blocks.append(con_b)
                         ref_dbs = []
                         for ref_data in consensus['hmlns:reference-database']:
@@ -264,16 +273,15 @@ class HmlParser(object):
                                 if c not in block:
                                     xmldata['hmlns:sample'][i]['hmlns:typing'][j]['hmlns:consensus-sequence'][k]['hmlns:consensus-sequence-block'][l].update({c: ''})
 
-                            if 'hmlns:variant' not in xmldata['hmlns:sample'][i]['hmlns:typing'][j]['hmlns:consensus-sequence'][k]['hmlns:consensus-sequence-block'][l]:
-                                xmldata['hmlns:sample'][i]['hmlns:typing'][j]['hmlns:consensus-sequence'][k]['hmlns:consensus-sequence-block'][l].update({'hmlns:variant': []})
-
+                            if 'hmlns:variant' not in block:
+                                block.update({'hmlns:variant': []})
                             for m in range(0, len(block['hmlns:variant'])):
                                 variant = block['hmlns:variant'][m]
                                 variant_level = ['@id', '@name', '@start', '@end', '@reference-bases', '@alternate-bases', '@quality-score', '@filter', '@uri']
+                                print()
                                 for v in variant_level:
                                     if v not in variant:
-                                        xmldata['hmlns:sample'][i]['hmlns:typing'][j]['hmlns:consensus-sequence'][k]['hmlns:consensus-sequence-block'][l]['hmlns:variant'][m].update({v: ''})
-
+                                        block['hmlns:variant'][m].update({v: ''})
                         if 'hmlns:reference-database' in consensus:
                             for l in range(0, len(consensus['hmlns:reference-database'])):
                                 for m in range(0, len(consensus['hmlns:reference-database'][l]['hmlns:reference-sequence'])):

@@ -184,6 +184,9 @@ class HmlParser(object):
                                                       start=cbd['@start'],
                                                       strand=str(cbd['@strand']),
                                                       sequence=seq)
+                            for variant in cbd['hmlns:variant']:
+                                print('variant found:' + str(variant))
+
                             blocks.append(con_b)
                         ref_dbs = []
                         for ref_data in consensus['hmlns:reference-database']:
@@ -260,6 +263,17 @@ class HmlParser(object):
                             for c in conslevel:
                                 if c not in block:
                                     xmldata['hmlns:sample'][i]['hmlns:typing'][j]['hmlns:consensus-sequence'][k]['hmlns:consensus-sequence-block'][l].update({c: ''})
+
+                            if 'hmlns:variant' not in xmldata['hmlns:sample'][i]['hmlns:typing'][j]['hmlns:consensus-sequence'][k]['hmlns:consensus-sequence-block'][l]:
+                                xmldata['hmlns:sample'][i]['hmlns:typing'][j]['hmlns:consensus-sequence'][k]['hmlns:consensus-sequence-block'][l].update({'hmlns:variant': []})
+
+                            for m in range(0, len(block['hmlns:variant'])):
+                                variant = block['hmlns:variant'][m]
+                                variant_level = ['@id', '@name', '@start', '@end', '@reference-bases', '@alternate-bases', '@quality-score', '@filter', '@uri']
+                                for v in variant_level:
+                                    if v not in variant:
+                                        xmldata['hmlns:sample'][i]['hmlns:typing'][j]['hmlns:consensus-sequence'][k]['hmlns:consensus-sequence-block'][l]['hmlns:variant'][m].update({v: ''})
+
                         if 'hmlns:reference-database' in consensus:
                             for l in range(0, len(consensus['hmlns:reference-database'])):
                                 for m in range(0, len(consensus['hmlns:reference-database'][l]['hmlns:reference-sequence'])):
